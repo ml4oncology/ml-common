@@ -31,7 +31,7 @@ class Splitter:
         self.random_state = random_state
 
     def split_data(
-        self, split_date: str, df: pd.DataFrame
+        self, df: pd.DataFrame, split_date: str, 
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Create the training, validation, and testing set"""
         # split data temporally based on patients first visit date
