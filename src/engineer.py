@@ -31,6 +31,15 @@ def get_change_since_prev_session(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def get_missingness_features(
+    df: pd.DataFrame, exclude_keyword: str = "target"
+) -> pd.DataFrame:
+    cols_with_nan = df.columns[df.isnull().any()]
+    cols_with_nan = cols_with_nan[~cols_with_nan.str.contains(exclude_keyword)]
+    df[cols_with_nan + "_is_missing"] = df[cols_with_nan].isnull()
+    return df
+
+
 def collapse_rare_categories(
     df: pd.DataFrame, 
     catcols: Sequence[str], 
