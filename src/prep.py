@@ -27,24 +27,21 @@ logger = logging.getLogger(__name__)
 # Splitting
 ###############################################################################
 class Splitter:
-    def __init__(self, split_date: str, random_state: int = 42):
-        self.split_date = split_date
+    def __init__(self, random_state: int = 42):
         self.random_state = random_state
 
     def split_data(
-        self, df: pd.DataFrame
+        self, split_date: str, df: pd.DataFrame
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Create the training, validation, and testing set"""
         # split data temporally based on patients first visit date
-        train_data, test_data = self.temporal_split(df, split_date=self.split_date)
+        train_data, test_data = self.temporal_split(df, split_date=split_date)
 
         def disp(x):
             return f"NSessions={len(x)}. NPatients={x.mrn.nunique()}. Contains all patients whose first visit was "
 
-        logger.info(
-            f"Development Cohort: {disp(train_data)} on or before {self.split_date}"
-        )
-        logger.info(f"Test Cohort: {disp(test_data)} after {self.split_date}")
+        logger.info(f"Development Cohort: {disp(train_data)} on or before {split_date}")
+        logger.info(f"Test Cohort: {disp(test_data)} after {split_date}")
 
         # create validation set from train data (80-20 split)
         train_data, valid_data = self.random_split(
