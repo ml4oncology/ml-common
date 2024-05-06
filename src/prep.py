@@ -1,6 +1,7 @@
 """
 Module to prepare data for model consumption
 """
+
 from collections.abc import Sequence
 from typing import Optional
 import logging
@@ -10,7 +11,12 @@ from sklearn.model_selection import GroupShuffleSplit
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
 
-from .constants import DEFAULT_CLIP_COLS, DEFAULT_ENCODE_COLS, DEFAULT_IMPUTE_COLS, DEFAULT_NORM_COLS
+from .constants import (
+    DEFAULT_CLIP_COLS,
+    DEFAULT_ENCODE_COLS,
+    DEFAULT_IMPUTE_COLS,
+    DEFAULT_NORM_COLS,
+)
 from .engineer import collapse_rare_categories
 from .util import get_excluded_numbers
 
@@ -25,62 +31,71 @@ class Splitter:
         self.split_date = split_date
         self.random_state = random_state
 
-    def split_data(self, df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def split_data(
+        self, df: pd.DataFrame
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Create the training, validation, and testing set"""
         # split data temporally based on patients first visit date
         train_data, test_data = self.temporal_split(df, split_date=self.split_date)
-        
-        disp = lambda x: f"NSessions={len(x)}. NPatients={x.mrn.nunique()}. Contains all patients whose first visit was "
-        logger.info(f"Development Cohort: {disp(train_data)} on or before {self.split_date}")
+
+        def disp(x):
+            return f"NSessions={len(x)}. NPatients={x.mrn.nunique()}. Contains all patients whose first visit was "
+
+        logger.info(
+            f"Development Cohort: {disp(train_data)} on or before {self.split_date}"
+        )
         logger.info(f"Test Cohort: {disp(test_data)} after {self.split_date}")
 
         # create validation set from train data (80-20 split)
-        train_data, valid_data = self.random_split(train_data, test_size=0.2, random_state=self.random_state)
+        train_data, valid_data = self.random_split(
+            train_data, test_size=0.2, random_state=self.random_state
+        )
 
         return train_data, valid_data, test_data
-    
+
     def temporal_split(
-        self, 
-        df: pd.DataFrame, 
+        self,
+        df: pd.DataFrame,
         split_date: str,
-        visit_col: str = 'treatment_date',
+        visit_col: str = "treatment_date",
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Split the data temporally based on patient's first visit date
-        """
-        first_date = df.groupby('mrn')[visit_col].min()
-        first_date = df['mrn'].map(first_date)
+        """Split the data temporally based on patient's first visit date"""
+        first_date = df.groupby("mrn")[visit_col].min()
+        first_date = df["mrn"].map(first_date)
         mask = first_date <= split_date
         dev_cohort, test_cohort = df[mask].copy(), df[~mask].copy()
 
         # remove visits in the dev_cohort that occured after split_date
-        mask = dev_cohort['treatment_date'] <= split_date
-        get_excluded_numbers(dev_cohort, mask, f' that occured after {split_date} in the development cohort')
+        mask = dev_cohort["treatment_date"] <= split_date
+        get_excluded_numbers(
+            dev_cohort,
+            mask,
+            f" that occured after {split_date} in the development cohort",
+        )
         dev_cohort = dev_cohort[mask]
 
         return dev_cohort, test_cohort
-    
+
     def random_split(
-        self, 
-        df: pd.DataFrame, 
-        test_size: float, 
-        random_state: int = 42
+        self, df: pd.DataFrame, test_size: float, random_state: int = 42
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Split the data randomly based on patient id
-        """
-        gss = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
-        train_idxs, test_idxs = next(gss.split(df, groups=df['mrn']))
+        """Split the data randomly based on patient id"""
+        gss = GroupShuffleSplit(
+            n_splits=1, test_size=test_size, random_state=random_state
+        )
+        train_idxs, test_idxs = next(gss.split(df, groups=df["mrn"]))
         return df.iloc[train_idxs].copy(), df.iloc[test_idxs].copy()
 
-    
+
 ###############################################################################
 # Imputation
 ###############################################################################
 class Imputer:
-    """Impute missing data by mean, mode, or median
-    """
+    """Impute missing data by mean, mode, or median"""
+
     def __init__(self, impute_cols: Optional[dict] = None):
         self.impute_cols = DEFAULT_IMPUTE_COLS if impute_cols is None else impute_cols
-        self.imputer = {'mean': None, 'most_frequent': None, 'median': None}
+        self.imputer = {"mean": None, "most_frequent": None, "median": None}
         # ensure the provided impute_cols has matching keys
         assert all([key in self.impute_cols for key in self.imputer])
 
@@ -93,31 +108,35 @@ class Imputer:
 
             # use only the columns that exist in the data
             cols = list(set(cols).intersection(data.columns))
-            
+
             if imputer is None:
                 # create the imputer and impute the data
-                imputer = SimpleImputer(strategy=strategy) 
+                imputer = SimpleImputer(strategy=strategy)
                 data[cols] = imputer.fit_transform(data[cols])
-                self.imputer[strategy] = imputer # save the imputer
+                self.imputer[strategy] = imputer  # save the imputer
             else:
                 # use existing imputer to impute the data
                 data[cols] = imputer.transform(data[cols])
         return data
+
 
 ###############################################################################
 # One-Hot Encoding
 ###############################################################################
 class OneHotEncoder:
     """One-hot encode (OHE) categorical data.
-    
-    Create separate indicator columns for each unique category and assign binary values of 1 or 0 to indicate the 
+
+    Create separate indicator columns for each unique category and assign binary values of 1 or 0 to indicate the
     category's presence.
     """
+
     def __init__(self, encode_cols: Optional[Sequence] = None):
         self.encode_cols = DEFAULT_ENCODE_COLS if encode_cols is None else encode_cols
-        self.final_columns = None # the final feature names after OHE
-        
-    def encode(self, data: pd.DataFrame, collapse: bool = True, verbose: bool = True) -> pd.DataFrame:
+        self.final_columns = None  # the final feature names after OHE
+
+    def encode(
+        self, data: pd.DataFrame, collapse: bool = True, verbose: bool = True
+    ) -> pd.DataFrame:
         """
         Args:
             collapse: If True, rare entries are collapsed into the 'other' category
@@ -126,81 +145,93 @@ class OneHotEncoder:
         # use only the columns that exist in the data
         cols = [col for col in self.encode_cols if col in data.columns]
         data = pd.get_dummies(data, columns=cols)
-        
+
         if self.final_columns is None:
-            if collapse: data = collapse_rare_categories(data, catcols=cols)
+            if collapse:
+                data = collapse_rare_categories(data, catcols=cols)
             self.final_columns = data.columns
             return data
-        
+
         # reassign any indicator columns that did not exist in final columns as other
         for feature in cols:
             indicator_cols = data.columns[data.columns.str.startswith(feature)]
             extra_cols = indicator_cols.difference(self.final_columns)
-            if extra_cols.empty: continue
-            
+            if extra_cols.empty:
+                continue
+
             if verbose:
                 count = data[extra_cols].sum()
-                msg = (f'Reassigning the following {feature} indicator columns '
-                       f'that did not exist in train set as other:\n{count}')
+                msg = (
+                    f"Reassigning the following {feature} indicator columns "
+                    f"that did not exist in train set as other:\n{count}"
+                )
                 logger.info(msg)
-                
-            other_col = f'{feature}_other'
-            if other_col not in data: data[other_col] = 0
+
+            other_col = f"{feature}_other"
+            if other_col not in data:
+                data[other_col] = 0
             data[other_col] |= data[extra_cols].any(axis=1).astype(int)
             data = data.drop(columns=extra_cols)
-            
+
         # fill in any missing columns
         missing_cols = self.final_columns.difference(data.columns)
         # use concat instead of data[missing_cols] = 0 to prevent perf warning
-        data = pd.concat([data, pd.DataFrame(0, index=data.index, columns=missing_cols)], axis=1)
-        
+        data = pd.concat(
+            [data, pd.DataFrame(0, index=data.index, columns=missing_cols)], axis=1
+        )
+
         return data
-    
+
+
 ###############################################################################
 # Transformation
 ###############################################################################
 class PrepData:
     """Prepare the data for model training"""
+
     def __init__(
-        self, 
+        self,
         clip_cols: Optional[Sequence] = None,
-        norm_cols: Optional[Sequence] = None, 
+        norm_cols: Optional[Sequence] = None,
         encode_cols: Optional[Sequence] = None,
         impute_cols: Optional[dict] = None,
     ):
         self.imp = Imputer(impute_cols=impute_cols)
         self.ohe = OneHotEncoder(encode_cols=encode_cols)
-        self.scaler = None # normalizer
-        self.clip_thresh = None # outlier clippers
+        self.scaler = None  # normalizer
+        self.clip_thresh = None  # outlier clippers
         self.norm_cols = DEFAULT_NORM_COLS if norm_cols is None else norm_cols
         self.clip_cols = DEFAULT_CLIP_COLS if clip_cols is None else clip_cols
-    
+
     def transform_data(
-        self, 
+        self,
         data,
         one_hot_encode: bool = True,
-        clip: bool = True, 
-        impute: bool = True, 
-        normalize: bool = True, 
+        clip: bool = True,
+        impute: bool = True,
+        normalize: bool = True,
         ohe_kwargs: Optional[dict] = None,
         data_name: Optional[str] = None,
-        verbose: bool = True
+        verbose: bool = True,
     ) -> pd.DataFrame:
         """Transform (one-hot encode, clip, impute, normalize) the data.
-        
+
         Args:
             ohe_kwargs (dict): a mapping of keyword arguments fed into OneHotEncoder.encode
-                
+
         IMPORTANT: always make sure train data is done first before valid or test data
         """
-        if ohe_kwargs is None: ohe_kwargs = {}
-        if data_name is None: data_name = 'the'
-        
+        if ohe_kwargs is None:
+            ohe_kwargs = {}
+        if data_name is None:
+            data_name = "the"
+
         if one_hot_encode:
             # One-hot encode categorical data
-            if verbose: logger.info(f'One-hot encoding {data_name} data')
+            if verbose:
+                logger.info(f"One-hot encoding {data_name} data")
             data = self.ohe.encode(data, **ohe_kwargs)
-            
+
         if clip:
             # Clip the outliers based on the train data quantiles
             data = self.clip_outliers(data)
@@ -208,42 +239,41 @@ class PrepData:
         if impute:
             # Impute missing data based on the train data mode/median/mean
             data = self.imp.impute(data)
-            
+
         if normalize:
             # Scale the data based on the train data distribution
             data = self.normalize_data(data)
-            
+
         return data
-    
+
     def normalize_data(self, data: pd.DataFrame) -> pd.DataFrame:
         # use only the columns that exist in the data
         norm_cols = [col for col in self.norm_cols if col in data.columns]
-        
+
         if self.scaler is None:
             self.scaler = StandardScaler()
             data[norm_cols] = self.scaler.fit_transform(data[norm_cols])
         else:
             data[norm_cols] = self.scaler.transform(data[norm_cols])
         return data
-    
+
     def clip_outliers(
-        self, 
-        data: pd.DataFrame, 
-        lower_percentile: float = 0.001, 
-        upper_percentile: float = 0.999
+        self,
+        data: pd.DataFrame,
+        lower_percentile: float = 0.001,
+        upper_percentile: float = 0.999,
     ) -> pd.DataFrame:
-        """Clip the upper and lower percentiles for the columns indicated below
-        """
+        """Clip the upper and lower percentiles for the columns indicated below"""
         # use only the columns that exist in the data
         cols = [col for col in self.clip_cols if col in data.columns]
-        
+
         if self.clip_thresh is None:
             percentiles = [lower_percentile, upper_percentile]
             self.clip_thresh = data[cols].quantile(percentiles)
-            
+
         data[cols] = data[cols].clip(
-            lower=self.clip_thresh.loc[lower_percentile], 
-            upper=self.clip_thresh.loc[upper_percentile], 
-            axis=1
+            lower=self.clip_thresh.loc[lower_percentile],
+            upper=self.clip_thresh.loc[upper_percentile],
+            axis=1,
         )
         return data
