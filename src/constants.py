@@ -13,12 +13,14 @@ SYMP_COLS = [
     "esas_shortness_of_breath",
 ]
 LAB_COLS = [
+    "activated_partial_thromboplastin_time",
     "alanine_aminotransferase",
     "albumin",
     "alkaline_phosphatase",
     "aspartate_aminotransferase",
     "basophil",
     "bicarbonate",
+    "carbohydrate_antigen_19-9",
     "chloride",
     "creatinine",
     "eosinophil",
@@ -37,6 +39,7 @@ LAB_COLS = [
     "phosphate",
     "platelet",
     "potassium",
+    "prothrombin_time_international_normalized_ratio",
     "red_blood_cell",
     "red_cell_distribution_width",
     "sodium",
