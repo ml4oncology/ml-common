@@ -4,7 +4,7 @@ Module to anchor features or targets
 from functools import partial
 
 import pandas as pd
-import tqdm
+from tqdm import tqdm
 
 from .util import split_and_parallelize
 
