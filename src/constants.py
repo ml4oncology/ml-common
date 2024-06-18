@@ -95,7 +95,7 @@ DEFAULT_NORM_COLS = (
         "days_since_starting_treatment",
         "height",
         "line_of_therapy",
-        "num_prior_EDs_within_5_years",
+        "num_prior_ED_visits_within_5_years",
         "patient_ecog",
         "patient_ecog_change",
         "visit_month_sin",
