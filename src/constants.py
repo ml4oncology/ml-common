@@ -91,7 +91,7 @@ DEFAULT_NORM_COLS = (
         "body_surface_area",
         "cycle_number",
         "days_since_last_treatment",
-        "days_since_prev_ED",
+        "days_since_prev_ED_visit",
         "days_since_starting_treatment",
         "height",
         "line_of_therapy",
