@@ -34,10 +34,11 @@ class Splitter:
         self,
         df: pd.DataFrame,
         split_date: str,
+        **kwargs
     ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """Create the training, validation, and testing set"""
         # split data temporally based on patients first visit date
-        train_data, test_data = self.temporal_split(df, split_date=split_date)
+        train_data, test_data = self.temporal_split(df, split_date=split_date, **kwargs)
 
         def disp(x):
             return f"NSessions={len(x)}. NPatients={x.mrn.nunique()}. Contains all patients whose first visit was "
@@ -57,6 +58,7 @@ class Splitter:
         df: pd.DataFrame,
         split_date: str,
         visit_col: str = "treatment_date",
+        exclude_after_split: bool = True,
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """Split the data temporally based on patient's first visit date"""
         first_date = df.groupby("mrn")[visit_col].min()
@@ -64,14 +66,15 @@ class Splitter:
         mask = first_date <= split_date
         dev_cohort, test_cohort = df[mask].copy(), df[~mask].copy()
 
-        # remove visits in the dev_cohort that occured after split_date
-        mask = dev_cohort["treatment_date"] <= split_date
-        get_excluded_numbers(
-            dev_cohort,
-            mask,
-            f" that occured after {split_date} in the development cohort",
-        )
-        dev_cohort = dev_cohort[mask]
+        if exclude_after_split:
+            # remove visits in the dev_cohort that occured after split_date
+            mask = dev_cohort["treatment_date"] <= split_date
+            get_excluded_numbers(
+                dev_cohort,
+                mask,
+                f" that occured after {split_date} in the development cohort",
+            )
+            dev_cohort = dev_cohort[mask]
 
         return dev_cohort, test_cohort
 
