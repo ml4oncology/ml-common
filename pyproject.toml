@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ml_common"
+description = "Common functions and variables shared across projects."
+version = "0.1.0"
+authors = [
+    { name = "Kevin He", email = "Kevin.He@uhn.ca" }
+]
+dependencies = [
+    "pandas",
+    "scikit-learn"
+]
+
+[tool.setuptools]
+package-dir = {"ml_common" = "src"}
