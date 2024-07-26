@@ -16,21 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_change_since_prev_session(df: pd.DataFrame) -> pd.DataFrame:
-    """Get change since last session"""
+    """Get change in measurements since previous session"""
     cols = LAB_COLS + SYMP_COLS + ["patient_ecog"]
-    change_cols = SYMP_CHANGE_COLS + LAB_CHANGE_COLS + ["patient_ecog_change"]
-    result = []
-    for mrn, group in tqdm(
-        df.groupby("mrn"), desc="Getting change since last session..."
-    ):
-        change = group[cols] - group[cols].shift()
-        result.append(change.reset_index().to_numpy())
-    result = np.concatenate(result)
-
-    result = pd.DataFrame(result, columns=["index"] + change_cols).set_index("index")
-    result.index = result.index.astype(int)
+    change_cols = LAB_CHANGE_COLS + SYMP_CHANGE_COLS + ["patient_ecog_change"]
+    result = df.groupby('mrn')[cols].diff() # assumes dataframe is sorted by visit date already
+    result.columns = change_cols
     df = pd.concat([df, result], axis=1)
-
     return df
 
 
