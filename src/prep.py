@@ -68,7 +68,7 @@ class Splitter:
 
         if exclude_after_split:
             # remove visits in the dev_cohort that occured after split_date
-            mask = dev_cohort["treatment_date"] <= split_date
+            mask = dev_cohort[visit_col] <= split_date
             get_excluded_numbers(
                 dev_cohort,
                 mask,
@@ -105,11 +105,12 @@ class Imputer:
         # loop through the mean, mode, and median imputer
         for strategy, imputer in self.imputer.items():
             cols = self.impute_cols[strategy]
-            if not cols:
-                continue
 
             # use only the columns that exist in the data
             cols = list(set(cols).intersection(data.columns))
+            
+            if not cols:
+                continue
 
             if imputer is None:
                 # create the imputer and impute the data
