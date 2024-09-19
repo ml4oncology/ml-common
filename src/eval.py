@@ -50,8 +50,8 @@ def outcome_level_sensitivity(df: pd.DataFrame, lookahead_window: int = 90):
 def first_alarm_precision(df: pd.DataFrame, target_col: str):
     """Get the proportion of first alarms that were true
     """
-    first_alarms = df.query('alarm').groupby('mrn').first()
-    return precision_score(df[target_col], first_alarms, zero_division=0)
+    df = df.query('alarm').groupby('mrn').first()
+    return precision_score(df[target_col], df['alarm'], zero_division=0)
 
 
 def first_alarm_precision_outcome_level_recall_curve(df: pd.DataFrame, target_col: str, pred_col: str = 'pred'):
