@@ -43,8 +43,8 @@ def remove_duplicate_lines(text: pd.Series) -> pd.Series:
     return lines.apply(lambda text: "\n".join(ordered_set(text)))
 
 
-def get_text_size(x):
+def get_text_size(text: pd.Series):
     return pd.concat([
-        x.str.len().describe(),
-        x.str.split().str.len().describe(),
+        text.str.len().describe(),
+        text.str.split().str.len().describe(),
     ], keys=['Length of text', 'Number of words'], axis=1)
