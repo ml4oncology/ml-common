@@ -64,6 +64,9 @@ def keep_only_one_per_week(df: pd.DataFrame) -> list[int]:
     """Keep only the first visit of a given week
     Drop all other sessions
     """
+    if df.index.nunique() != len(df):
+        raise ValueError("Make sure indices are unique")
+
     keep_idxs = []
     for mrn, group in df.groupby("mrn"):
         previous_date = pd.Timestamp.min
