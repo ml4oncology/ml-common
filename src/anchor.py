@@ -2,11 +2,14 @@
 Module to anchor features or targets
 """
 from functools import partial
+import logging
 
 import pandas as pd
 from tqdm import tqdm
 
 from .util import split_and_parallelize
+
+logger = logging.getLogger(__name__)
 
 def combine_feat_to_main_data(
     main: pd.DataFrame, 

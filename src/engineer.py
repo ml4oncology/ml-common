@@ -50,8 +50,14 @@ def collapse_rare_categories(
             if df.loc[mask, "mrn"].nunique() < N:
                 drop_cols.append(col)
                 other_mask |= mask
+        
+        if not drop_cols:
+            logger.info(f'No rare categories for {feature} was found')
+            continue
+
         df = df.drop(columns=drop_cols)
         df[f"{feature}_other"] = other_mask
         msg = f"Reassigning the following {len(drop_cols)} indicators with less than {N} patients as other: {drop_cols}"
         logger.info(msg)
+
     return df
