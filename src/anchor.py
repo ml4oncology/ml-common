@@ -16,6 +16,7 @@ def combine_feat_to_main_data(
     feat: pd.DataFrame, 
     main_date_col: str, 
     feat_date_col: str, 
+    parallelize: bool = True,
     **kwargs
 ) -> pd.DataFrame:
     """Combine feature(s) to the main dataset
@@ -23,8 +24,11 @@ def combine_feat_to_main_data(
     Both main and feat should have mrn and date columns
     """
     mask = main['mrn'].isin(feat['mrn'])
-    worker = partial(extractor, main_date_col=main_date_col, feat_date_col=feat_date_col, **kwargs)
-    result = split_and_parallelize((main[mask], feat), worker)
+    if parallelize:
+        worker = partial(extractor, main_date_col=main_date_col, feat_date_col=feat_date_col, **kwargs)
+        result = split_and_parallelize((main[mask], feat), worker)
+    else:
+        result = extractor((main[mask], feat), main_date_col, feat_date_col, **kwargs)
     cols = ['index'] + feat.columns.drop(['mrn', feat_date_col]).tolist()
     result = pd.DataFrame(result, columns=cols).set_index('index')
     df = main.join(result)
