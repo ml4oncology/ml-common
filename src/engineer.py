@@ -19,6 +19,11 @@ def get_change_since_prev_session(df: pd.DataFrame) -> pd.DataFrame:
     """Get change in measurements since previous session"""
     cols = LAB_COLS + SYMP_COLS + ["patient_ecog"]
     change_cols = LAB_CHANGE_COLS + SYMP_CHANGE_COLS + ["patient_ecog_change"]
+
+    # use only the columns that exist in the data
+    mask = [col in df.columns for col in cols]
+    cols, change_cols = np.array(cols)[mask], np.array(change_cols)[mask]
+
     result = df.groupby('mrn')[cols].diff() # assumes dataframe is sorted by visit date already
     result.columns = change_cols
     df = pd.concat([df, result], axis=1)
