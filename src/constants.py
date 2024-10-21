@@ -296,7 +296,7 @@ UNIT_MAP = {
     "umol/L": ["creatinine", "total_bilirubin"],
     "x10e9/L": [
         "eosinophil",
-        "lymphocytes",
+        "lymphocyte",
         "monocyte",
         "neutrophil",
         "platelet",
