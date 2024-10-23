@@ -104,10 +104,8 @@ class Imputer:
     def impute(self, data: pd.DataFrame) -> pd.DataFrame:
         # loop through the mean, mode, and median imputer
         for strategy, imputer in self.imputer.items():
-            cols = self.impute_cols[strategy]
-
             # use only the columns that exist in the data
-            cols = list(set(cols).intersection(data.columns))
+            cols = [col for col in self.impute_cols[strategy] if col in data.columns]
             
             if not cols:
                 continue

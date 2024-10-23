@@ -1,8 +1,6 @@
 """
 Module to preprocess text
 """
-from collections import OrderedDict
-
 import pandas as pd
 
 ###############################################################################
@@ -27,7 +25,14 @@ def combine_text(
         raise NotImplementedError('Combining all past text not supported yet')
 
     # combine same day texts
-    df = df.groupby(['mrn', date_col])[text_col].apply('\n'.join).reset_index()
+    def combine(data, fill_value=''): 
+        return '\n'.join(dict.fromkeys(data.fillna(fill_value)))
+    string_cols = df.columns[df.dtypes == 'object']
+    other_cols = df.columns[df.dtypes != 'object'].drop(['mrn', date_col])
+    df = df.groupby(['mrn', date_col]).agg({
+        **{col: combine for col in string_cols},
+        **{col: 'max' for col in other_cols}
+    }).reset_index()
 
     if no_same_lines:
         # remove duplicate lines (some may be same text with addendums)
@@ -38,9 +43,7 @@ def combine_text(
 
 def remove_duplicate_lines(text: pd.Series) -> pd.Series:
     lines = text.str.split('\n')
-    def ordered_set(arr):
-        return list(OrderedDict({x: None for x in arr}).keys()) 
-    return lines.apply(lambda text: "\n".join(ordered_set(text)))
+    return lines.apply(lambda text: "\n".join(dict.fromkeys(text)))
 
 
 def get_text_size(text: pd.Series):

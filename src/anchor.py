@@ -5,7 +5,6 @@ from functools import partial
 import logging
 
 import pandas as pd
-from tqdm import tqdm
 
 from .util import split_and_parallelize
 
@@ -16,6 +15,7 @@ def combine_feat_to_main_data(
     feat: pd.DataFrame, 
     main_date_col: str, 
     feat_date_col: str, 
+    parallelize: bool = True,
     **kwargs
 ) -> pd.DataFrame:
     """Combine feature(s) to the main dataset
@@ -23,8 +23,11 @@ def combine_feat_to_main_data(
     Both main and feat should have mrn and date columns
     """
     mask = main['mrn'].isin(feat['mrn'])
-    worker = partial(extractor, main_date_col=main_date_col, feat_date_col=feat_date_col, **kwargs)
-    result = split_and_parallelize((main[mask], feat), worker)
+    if parallelize:
+        worker = partial(extractor, main_date_col=main_date_col, feat_date_col=feat_date_col, **kwargs)
+        result = split_and_parallelize((main[mask], feat), worker)
+    else:
+        result = extractor((main[mask], feat), main_date_col, feat_date_col, **kwargs)
     cols = ['index'] + feat.columns.drop(['mrn', feat_date_col]).tolist()
     result = pd.DataFrame(result, columns=cols).set_index('index')
     df = main.join(result)
@@ -38,7 +41,7 @@ def extractor(
     keep: str = 'last', 
     time_window: tuple[int, int] = (-5,0),
 ) -> list:
-    """Extract either the sum, first, or last forward filled measurements (lab tests, symptom scores, etc) 
+    """Extract either the sum, max, first, or last forward filled measurements (lab tests, symptom scores, etc) 
     taken within the time window (centered on each main visit date)
 
     Args:
@@ -50,15 +53,15 @@ def extractor(
     TODO: support extraction of number of measurements in the time window
     TODO: support extraction of number of days from main date in which the first/last measurement was collected
     """
-    if keep not in ['first', 'last', 'sum']:
-        raise ValueError('keep must be either first, last, or sum')
+    if keep not in ['first', 'last', 'max', 'sum']:
+        raise ValueError('keep must be either first, last, max, or sum')
     
     main_df, feat_df = partition
     lower_limit, upper_limit = time_window
     keep_cols = feat_df.columns.drop(['mrn', feat_date_col])
 
     results = []
-    for mrn, main_group in tqdm(main_df.groupby('mrn')):
+    for mrn, main_group in main_df.groupby('mrn'):
         feat_group = feat_df.query('mrn == @mrn')
 
         for idx, date in main_group[main_date_col].items():
@@ -72,6 +75,8 @@ def extractor(
             feats = feat_group.loc[mask, keep_cols]
             if keep == 'sum':
                 result = feats.sum()
+            elif keep == 'max':
+                result = feats.max()
             elif keep == 'first':
                 result = feats.iloc[0]
             elif keep == 'last':
