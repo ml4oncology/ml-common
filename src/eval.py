@@ -35,15 +35,12 @@ def outcome_level_sensitivity(df: pd.DataFrame, lookahead_window: int = 90):
         happens on Jan 1 and Jan 14, then the outcome-level true positive is if 
         either Jan 1 or Jan 14 trigger a warning, and false negative if neither do
     """
-    result = []
-    for (mrn, event_date), group in df.groupby(['mrn', 'event_date']):
+    # ensure all event dates occur within X days of an assessment date
+    mask = df['event_date'].notna()
+    diff = (df.loc[mask, 'event_date'] - df.loc[mask, 'assessment_date']).dt.days
+    assert all(diff.between(0, lookahead_window))
 
-        # ensure assessment date and event date is within X days of each other
-        diff = (group['event_date'] - group['assessment_date']).dt.days
-        assert all(diff.between(0, lookahead_window))
-
-        result.append(any(group['alarm']))
-
+    result = df.groupby(['mrn', 'event_date'])['alarm'].any()
     return sum(result) / len(result) # tp / (tp + fn)
 
 
