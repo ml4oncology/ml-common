@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
     average_precision_score, 
     confusion_matrix,
@@ -166,6 +167,26 @@ def plot_prc(ax, y_true, y_pred, label: Optional[str] = None, **kwargs):
         label = f'AUPRC={average_precision_score(y_true, y_pred):.3f}'
     sns.lineplot(y=precision, x=recall, label=label, ax=ax)
     ax.set(ylabel='Precision', xlabel='Recall')
+    _clean_plot(ax, **kwargs)
+
+
+def plot_calib(
+    ax,
+    y_true, 
+    y_pred, 
+    label: Optional[str] = None, 
+    add_perf_calib: bool = True, 
+    calib_kwargs: Optional[dict] = None, 
+    **kwargs
+):
+    if calib_kwargs is None:
+        calib_kwargs = dict(n_bins=10, strategy='quantile')
+    prob_true, prob_pred = calibration_curve(y_true, y_pred, **calib_kwargs)
+    ax.plot(prob_pred, prob_true, label=label)
+    ax.set(ylabel='Empirical Probability', xlabel='Predicted Probability')
+    if add_perf_calib:
+        max_prob = max(prob_pred.max(), prob_true.max())
+        ax.plot([0, max_prob], [0, max_prob], 'k:', label='Perfect Calibration')
     _clean_plot(ax, **kwargs)
 
 
