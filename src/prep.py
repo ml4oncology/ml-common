@@ -121,6 +121,33 @@ class Imputer:
         return data
 
 
+def fill_missing_data_heuristically(
+    df: pd.DataFrame, 
+    zero_fills: Optional[Sequence[str]] = None, 
+    max_fills: Optional[Sequence[str]] = None,
+    min_fills: Optional[Sequence[str]] = None
+) -> pd.DataFrame:
+    """
+    Args:
+        zero_fills: column names whose missing values will be filled with zeros
+        max_fills: column names whose missing values will be filled with the max value in the column
+        min_fills: column names whose missing values will be filled with the min value in the column
+    """
+    if zero_fills is None: 
+        zero_fills = ["num_prior_ED_visits_within_5_years", "days_since_starting_treatment"]
+    if max_fills is None:
+        max_fills = ["days_since_last_treatment", "days_since_prev_ED_visit"]
+    if min_fills is None:
+        min_fills = []
+
+    fill_vals = {
+        **{col: 0 for col in zero_fills},
+        **{col: df[col].max() for col in max_fills},
+        **{col: df[col].min() for col in min_fills},
+    }
+    df = df.fillna(fill_vals)
+    return df
+
 ###############################################################################
 # One-Hot Encoding
 ###############################################################################
