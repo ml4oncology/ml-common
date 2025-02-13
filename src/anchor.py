@@ -1,37 +1,54 @@
 """
 Module to anchor features or targets
 """
-from functools import partial
 import logging
 
 import pandas as pd
-
-from .util import split_and_parallelize
 
 logger = logging.getLogger(__name__)
 
 def combine_feat_to_main_data(
     main: pd.DataFrame, 
     feat: pd.DataFrame, 
-    main_date_col: str, 
+    main_date_col: str,
     feat_date_col: str, 
-    parallelize: bool = True,
-    **kwargs
+    time_window: tuple[int, int] = (-5,0),
+    include_feat_date: bool = True
 ) -> pd.DataFrame:
-    """Combine feature(s) to the main dataset
+    """Extract the closest features prior to the main date within a lookback window and combine them to the main dataset
 
     Both main and feat should have mrn and date columns
     """
-    mask = main['mrn'].isin(feat['mrn'])
-    if parallelize:
-        worker = partial(extractor, main_date_col=main_date_col, feat_date_col=feat_date_col, **kwargs)
-        result = split_and_parallelize((main[mask], feat), worker)
-    else:
-        result = extractor((main[mask], feat), main_date_col, feat_date_col, **kwargs)
-    cols = ['index'] + feat.columns.drop(['mrn', feat_date_col]).tolist()
-    result = pd.DataFrame(result, columns=cols).set_index('index')
-    df = main.join(result)
-    return df
+    lower_limit, upper_limit = time_window
+
+    # pd.merge_asof uses binary search, requires input to be sorted by the time
+    main = main.sort_values(by=main_date_col)
+    feat = feat.sort_values(by=feat_date_col)
+    feat[feat_date_col] = feat[feat_date_col].astype(main[main_date_col].dtype) # ensure date types match
+
+    # merge each feature individually
+    for col in feat.columns:
+        if col in ['mrn', feat_date_col]: continue
+
+        data_to_merge = feat.loc[feat[col].notnull(), ['mrn', feat_date_col, col]]
+
+        # merges the closest row prior to main date while matching on mrn
+        main = pd.merge_asof(
+            main, data_to_merge, left_on=main_date_col, right_on=feat_date_col, by='mrn', direction='backward', 
+            allow_exact_matches=True, tolerance=pd.Timedelta(days=abs(lower_limit))
+        )
+
+        # if measured outside the time window, set to NaN
+        mask = main[feat_date_col] > main[main_date_col] + pd.Timedelta(days=upper_limit)
+        main.loc[mask, [feat_date_col, col]] = None
+
+        if include_feat_date:
+            # rename the date column
+            main = main.rename(columns={feat_date_col: f'{col}_{feat_date_col}'})
+        else:
+            del main[feat_date_col]
+
+    return main
 
 
 def extractor(
