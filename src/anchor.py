@@ -139,7 +139,7 @@ def merge_closest_measurements(
     direction: str = 'backward',
     time_window: tuple[int, int] = (-5,0),
     merge_individually: bool = True,
-    include_meas_date: bool = True
+    include_meas_date: bool = False
 ) -> pd.DataFrame:
     """Extract the closest measurements (lab tests, symptom scores, etc) prior to / after the main date 
     within a lookback / lookahead window and combine them to the main dataset
