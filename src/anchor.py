@@ -67,7 +67,7 @@ def measurement_stat_extractor(
 
             # if user provided their own stat function
             if stat_func is not None:
-                data = stat_func(meas_group, mask)
+                data = stat_func(meas_group[mask])
             else:
                 meas = meas_group[mask].drop(columns=['mrn'])
                 data = _measurement_stat_extractor(meas, meas_date_col, stats, include_meas_date)

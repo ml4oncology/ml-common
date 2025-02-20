@@ -60,7 +60,7 @@ def drop_samples_with_no_targets(
     return df
 
 
-def keep_only_one_per_week(df: pd.DataFrame) -> list[int]:
+def keep_only_one_per_week(df: pd.DataFrame, date_col: str = "assessment_date") -> list[int]:
     """Keep only the first visit of a given week
     Drop all other sessions
     """
@@ -70,7 +70,7 @@ def keep_only_one_per_week(df: pd.DataFrame) -> list[int]:
     keep_idxs = []
     for mrn, group in df.groupby("mrn"):
         previous_date = pd.Timestamp.min
-        for i, visit_date in group["assessment_date"].items():
+        for i, visit_date in group[date_col].items():
             if visit_date >= previous_date + pd.Timedelta(days=7):
                 keep_idxs.append(i)
                 previous_date = visit_date
