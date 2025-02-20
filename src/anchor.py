@@ -36,16 +36,18 @@ def measurement_stat_extractor(
     stats: list[str] | None = None, 
     stat_func: Callable | None = None,
     time_window: tuple[int, int] = (-5,0),
-    include_meas_date: bool = True,
+    include_meas_date: bool = False,
 ) -> list:
-    """Extract either the sum, max, min, mean, or count of measurements (lab tests, symptom scores, etc) 
+    """Extract either the first, last, sum, max, min, mean, or count of measurements (lab tests, symptom scores, etc) 
     taken within the time window (centered on each main date)
 
     Args:
         main_date_col: The column name of the main visit date
         meas_date_col: The column name of the measurement date
         time_window: The start and end of the window in terms of number of days after(+)/before(-) the main visit dates
-        stat: What aggregate functions to use for the measurements taken within the time window. Options are sum, max, min, avg, or count
+        stat: What aggregate functions to use for the measurements taken within the time window. 
+            Options are first, last, sum, max, min, avg, or count
+        include_meas_date: If True, stores the date of first / last measurement
     """
     if stats is None:
         stats = ['max']
