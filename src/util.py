@@ -1,3 +1,4 @@
+import os
 import itertools
 import logging
 import multiprocessing as mp
@@ -8,6 +9,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+os.environ["NUMEXPR_MAX_THREADS"] = "8" # this suppresses annoying "NumExpr defaulting to 8 threads" warning
 
 ###############################################################################
 # I/O
@@ -50,12 +52,9 @@ def save_table(df: pd.DataFrame, save_path: str, **kwargs):
 # Multiprocessing
 ###############################################################################
 def parallelize(generator, worker, processes: int = 4) -> list:
-    pool = mp.Pool(processes=processes)
-    result = pool.map(worker, generator)
-    pool.close()
-    pool.join()  # wait for all threads
-    result = list(itertools.chain(*result))
-    return result
+    with mp.Pool(processes=processes) as pool:
+        result = pool.map(worker, generator)
+    return list(itertools.chain.from_iterable(result))
 
 
 def split_and_parallelize(
