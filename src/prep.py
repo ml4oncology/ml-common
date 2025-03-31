@@ -2,14 +2,14 @@
 Module to prepare data for model consumption
 """
 
+import logging
 from collections.abc import Sequence
 from typing import Optional
-import logging
 
+import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.preprocessing import StandardScaler
-import pandas as pd
 
 from .constants import (
     DEFAULT_CLIP_COLS,
@@ -125,13 +125,15 @@ def fill_missing_data_heuristically(
     df: pd.DataFrame, 
     zero_fills: Optional[Sequence[str]] = None, 
     max_fills: Optional[Sequence[str]] = None,
-    min_fills: Optional[Sequence[str]] = None
+    min_fills: Optional[Sequence[str]] = None,
+    custom_fills: Optional[dict] = None,
 ) -> pd.DataFrame:
     """
     Args:
         zero_fills: column names whose missing values will be filled with zeros
         max_fills: column names whose missing values will be filled with the max value in the column
         min_fills: column names whose missing values will be filled with the min value in the column
+        custom_fills: a dictionary of column names and their corresponding fill values
     """
     if zero_fills is None: 
         zero_fills = ["num_prior_ED_visits_within_5_years", "days_since_starting_treatment"]
@@ -139,11 +141,14 @@ def fill_missing_data_heuristically(
         max_fills = ["days_since_last_treatment", "days_since_prev_ED_visit"]
     if min_fills is None:
         min_fills = []
+    if custom_fills is None:
+        custom_fills = {}
 
     fill_vals = {
         **{col: 0 for col in zero_fills},
         **{col: df[col].max() for col in max_fills},
         **{col: df[col].min() for col in min_fills},
+        **custom_fills,
     }
     df = df.fillna(fill_vals)
     return df
