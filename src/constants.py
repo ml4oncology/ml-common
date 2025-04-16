@@ -299,8 +299,11 @@ UNIT_MAP = {
     "fL": ["mean_corpuscular_volume", "mean_platelet_volume"],
     "g/L": ["albumin", "hemoglobin", "mean_corpuscular_hemoglobin_concentration"],
     "kg": ["weight"],
+    "kU/L": ["carbohydrate_antigen_19-9"],
+    "mL/min/1.73m2": ["eGFR"],
     "mmol/L": [
         "bicarbonate",
+        "calcium",
         "chloride",
         "glucose",
         "magnesium",
@@ -310,8 +313,10 @@ UNIT_MAP = {
     ],
     "m^2": ["body_surface_area"],
     "pg": ["mean_corpuscular_hemoglobin"],
+    "s": ["activated_partial_thromboplastin_time"],
     "umol/L": ["creatinine", "total_bilirubin"],
     "x10e9/L": [
+        "basophil",
         "eosinophil",
         "lymphocyte",
         "monocyte",
