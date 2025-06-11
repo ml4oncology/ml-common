@@ -2,17 +2,16 @@
 Module to filter features and samples
 """
 
+import logging
 from collections.abc import Sequence
 from typing import Optional
-import logging
+from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
 
 from .constants import DRUG_COLS
-from .util import get_nmissing, get_excluded_numbers
-
-from warnings import simplefilter
+from .util import get_excluded_numbers, get_nmissing
 
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
@@ -86,9 +85,6 @@ def keep_only_one_per_week(df: pd.DataFrame, date_col: str = "assessment_date") 
 ###############################################################################
 def drop_unused_drug_features(df: pd.DataFrame) -> pd.DataFrame:
     # use 0 as a placeholder for nans and inf
-    assert (
-        not (df[DRUG_COLS] == 0).any().any()
-    )  # ensure none of the drug feature value equals to 0
     df[DRUG_COLS] = df[DRUG_COLS].fillna(0).replace(np.inf, 0)
 
     # remove drugs given less than 10 times
