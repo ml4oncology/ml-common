@@ -12,7 +12,7 @@ authors = [
 dependencies = [
     "pandas",
     "scikit-learn",
-    "autolguon"
+    "autogluon"
 ]
 
 [tool.setuptools]

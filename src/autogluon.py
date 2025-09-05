@@ -18,18 +18,24 @@ def train_models(
 ) -> dict[str, TabularPredictor]:
     """Train models for all targets
 
+    Args:
+        feats: feature matrix, where each row is a data sample and each column is a feature
+        targs: target matrix, where each row is a data sample and each column is a prediction target
+        meta:  metadata associated with each sample. Must include a `mrn` column (medical record number).
+
     TODO: look into joblib for parallelization
     """
     data = feats.copy()
     if 'cv_folds' in meta:
         data['cv_folds'] = meta['cv_folds']
     else:
-        kwargs['mrns'] = meta['mrn']
+        data['mrn'] = meta['mrn']
 
     models = {}
     for target, label in targs.items():
         data[target] = label
-        models[target] = train_model(data[label != -1], target, **kwargs)
+        mask = label != -1
+        models[target] = train_model(data[mask].copy(), target, **kwargs)
         data.pop(target)
     return models
 
@@ -37,46 +43,45 @@ def train_models(
 def train_model(
     data: pd.DataFrame,
     target: str,
-    mrns: pd.Series | None = None,
     eval_metric: str = "average_precision",
     presets: str = "medium_quality",
     calibrate: bool = False,
     refit_on_full_data: bool = False,
     time_limit: int = 10000,  # seconds
-    save_path: str | None = None,
+    save_path: str = '.',
     extra_init_kwargs: dict | None = None,
     extra_fit_kwargs: dict | None = None,
 ) -> TabularPredictor:
     """
     Args:
-        mrns: the medical record number associated with each row of the data
         refit_on_full_data: If True, refit the model with the full training dataset at the end.
             Note the only difference between 'high' and 'best' preset is that 'high' refits on the full data, 'best'
             does not (as of 2024-12-17)
     """
-    if save_path is None:
-        quality = presets.replace("_quality", "")
-        save_path = f"./{target}-{quality}-{eval_metric}"
     if extra_init_kwargs is None:
         extra_init_kwargs = {}
     if extra_fit_kwargs is None:
         extra_fit_kwargs = {}
 
+    quality = presets.replace("_quality", "")
+    save_path = f"{save_path}/{target}-{quality}-{eval_metric}"
+
     if "cv_folds" not in data:
-        if mrns is None:
-            raise ValueError("Please provide mrns or set your own cv_folds")
+        if 'mrn' not in data:
+            raise ValueError("Please include mrn or cv_folds in the data")
         
         # create custom cross-validation folds based on mrn
         kf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
         kf_splits = kf.split(
             X=data,
             y=data[target],
-            groups=mrns,
+            groups=data['mrn'],
         )
         cv_folds = np.zeros(len(data))
         for fold, (_, valid_idxs) in enumerate(kf_splits):
             cv_folds[valid_idxs] = fold
         data["cv_folds"] = cv_folds
+        data.pop('mrn')
 
     # set up the training parameters
     init_kwargs = dict(
