@@ -3,6 +3,7 @@ Module to create summary tables
 """
 import pandas as pd
 
+
 ###############################################################################
 # Labels
 ###############################################################################
@@ -42,3 +43,21 @@ def _get_binary_label_distribution(df: pd.DataFrame, metainfo: pd.DataFrame, wit
         if N_exc > 0: 
             count[(target, -1)] = f'{N_exc} ({N_exc/N*100:.2f}%)'
     return count
+
+
+###############################################################################
+# Data Descriptors
+###############################################################################
+def get_nunique_categories(df: pd.DataFrame) -> pd.DataFrame:
+    catcols = df.dtypes[df.dtypes == object].index.tolist()
+    return pd.DataFrame(
+        df[catcols].nunique(), columns=["Number of Unique Categories"]
+    ).T
+
+
+def get_nmissing(df: pd.DataFrame) -> pd.DataFrame:
+    missing = df.isnull().sum()  # number of nans for each column
+    missing = missing[missing != 0]  # remove columns without missing values
+    missing = pd.DataFrame(missing, columns=["Missing (N)"])
+    missing["Missing (%)"] = (missing["Missing (N)"] / len(df) * 100).round(3)
+    return missing.sort_values(by="Missing (N)")
