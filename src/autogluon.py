@@ -13,7 +13,6 @@ from sklearn.model_selection import StratifiedGroupKFold
 
 # Ref: https://huggingface.co/spaces/TabArena/leaderboard
 # Ref: https://auto.gluon.ai/stable/api/autogluon.tabular.models.html
-# pip install "autogluon.tabular[tabicl,realmlp]==1.4.0" tabpfn==2.1.3 torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
 DEFAULT_HYPERPARAMS = {
     "RF": {}, # Random Forest
     "XT": {}, # Extra Trees

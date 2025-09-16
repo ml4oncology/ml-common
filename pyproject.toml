@@ -15,5 +15,15 @@ dependencies = [
     # "autogluon" # better for users who need it to install it themselves - installation takes so long
 ]
 
+[project.optional-dependencies]
+autogluon = [
+    "autogluon==1.4.0",
+    "autogluon.tabular[tabicl,realmlp]==1.4.0",
+    "tabpfn==2.1.3",
+    "torch==2.7.0",
+    "torchvision==0.22.0",
+    "torchaudio==2.7.0"
+]
+
 [tool.setuptools]
 package-dir = {"ml_common" = "src"}
