@@ -1,11 +1,35 @@
 """
 Module to train/eval/infer models with AutoGluon
+
+WARNING: Ensure the model checkpoints are downloaded in the cache dir before running on a server without internet access.
+$ huggingface-cli download Prior-Labs/TabPFN-v2-clf tabpfn-v2-classifier-finetuned-zk73skhh.ckpt --local-dir ~/.cache/tabpfn
+$ huggingface-cli download jingang/TabICL-clf tabicl-classifier-v1.1-0506.ckpt
+$ huggingface-cli download autogluon/mitra-classifier
 """
 import numpy as np
 import pandas as pd
 from autogluon.tabular import TabularPredictor
 from sklearn.model_selection import StratifiedGroupKFold
 
+# Ref: https://huggingface.co/spaces/TabArena/leaderboard
+# Ref: https://auto.gluon.ai/stable/api/autogluon.tabular.models.html
+# pip install "autogluon.tabular[tabicl,realmlp]==1.4.0" tabpfn==2.1.3 torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0
+DEFAULT_HYPERPARAMS = {
+    "RF": {}, # Random Forest
+    "XT": {}, # Extra Trees
+    "KNN": {}, # K-Nearest Neighbors
+    "GBM": {}, # Light Gradient-Boosting Machine
+    "CAT": {}, # Categorical Boosting
+    "XGB": {}, # eXtreme Gradient Boosting
+    "REALMLP": {}, # Real Multilayer Perceptron
+    "TABM": {}, # Tabular DL model that makes Multiple predictions
+    # "MITRA": {'fine_tune': True}, # Mitra - takes too long
+    "TABICL": {}, # Tabular In-Context Learning
+    "TABPFNV2": {}, # Tabular Prior-Fitted Networks v2
+    "LR": {}, # Logistic Regression
+    "ENS_WEIGHTED": {}, # Greedy Weighted Ensemble
+    "SIMPLE_ENS_WEIGHTED": {}, # Simple Weighted Ensemble
+}
 
 ###############################################################################
 # Train
@@ -47,8 +71,9 @@ def train_model(
     presets: str = "medium_quality",
     calibrate: bool = False,
     refit_on_full_data: bool = False,
-    time_limit: int = 10000,  # seconds
+    time_limit: int = 10000, # seconds
     save_path: str = '.',
+    resume: bool = False,
     extra_init_kwargs: dict | None = None,
     extra_fit_kwargs: dict | None = None,
 ) -> TabularPredictor:
@@ -61,10 +86,10 @@ def train_model(
     if extra_init_kwargs is None:
         extra_init_kwargs = {}
     if extra_fit_kwargs is None:
-        extra_fit_kwargs = {}
+        extra_fit_kwargs = {'hyperparameters': DEFAULT_HYPERPARAMS}
 
     quality = presets.replace("_quality", "")
-    save_path = f"{save_path}/{target}-{quality}-{eval_metric}"
+    save_path = f"{save_path}/{target}"
 
     if "cv_folds" not in data:
         if 'mrn' not in data:
@@ -93,11 +118,6 @@ def train_model(
     fit_kwargs = dict(
         presets=presets,
         # feature_prune_kwargs={}, # mixed results with feature pruning
-        excluded_model_types=[
-            "FASTAI",
-            "NN_TORCH",
-        ],  # they perform badly anyways, on top them being slow
-        # included_model_types=['XGB'],
         # fit_weighted_ensemble=False,
         calibrate=calibrate,
         save_bag_folds=True,  # save the individual cross validation fold models
@@ -117,7 +137,10 @@ def train_model(
         # use our own cross validation folds
         init_kwargs["groups"] = "cv_folds"
 
-    predictor = TabularPredictor(label=target, **init_kwargs).fit(data, **fit_kwargs)
+    if resume:
+        predictor = TabularPredictor.load(save_path, resume=True).fit(data, **fit_kwargs)
+    else:
+        predictor = TabularPredictor(label=target, **init_kwargs).fit(data, **fit_kwargs)
     return predictor
 
 
