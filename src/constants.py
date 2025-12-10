@@ -39,6 +39,7 @@ CANCER_CODE_MAP = {
     "C38": "Heart, mediastinum, and pleura",
     "C40": "Bones, joints, and articular cartilage of limbs",
     "C41": "Bones, joints, and articular cartilage of other and unspecified sites",
+    "C43": "Skin (melanoma)",
     "C44": "Skin",
     "C47": "Peripheral nerves and autonomic nervous system",
     "C48": "Retroperitoneum and peritoneum",
@@ -62,12 +63,14 @@ CANCER_CODE_MAP = {
     "C67": "Bladder",
     "C68": "Other and unspecified urinary organs",
     "C69": "Eye and adnexa",
+    "C70": "Meninges",
     "C71": "Brain",
     "C72": "Spinal cord, cranial nerves, and other parts of central nervous system",
     "C73": "Thyroid and other endocrine glands",
     "C74": "Adrenal Gland",
     "C75": "Other endocrine glands and related structures",
     "C76": "Other and ill-defined sites",
+    "C77": "Lymph nodes",
     "C80": "Unknown primary site",
     "800": "Neoplasms, NOS",
     "801": "Epithelial neoplasms, NOS",
@@ -155,4 +158,17 @@ CANCER_CODE_MAP = {
     "947": "Gliomas",
     "954": "Nerve sheath tumors",
     "956": "Nerve sheath tumors",
+}
+CANCER_GROUPING = {
+    'Head and Neck': ['C00', 'C01', 'C02', 'C03', 'C04', 'C05', 'C06', 'C08', 'C09', 'C10', 'C11', 'C12', 'C13', 'C14'],
+    'Gastrointestinal': ['C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'C22', 'C23', 'C24', 'C25', 'C26'], # aka gastroenterology
+    'Thoracic': ['C30', 'C31', 'C32', 'C33', 'C34', 'C37', 'C38'], # aka thoracic oncology, includes everything in the thorax (chest cavity) like lung, heart
+    'Soft Tissue/Bone': ['C40', 'C41', 'C49'],
+    'Skin': ['C43', 'C44'],
+    'Breast': ['C50'],
+    'Female Organs': ['C51', 'C52', 'C53', 'C54', 'C55', 'C56', 'C57', 'C58'], # aka gynecology
+    'Male Organs': ['C60', 'C61', 'C62', 'C63'], # aka genitourinary
+    'Urinary Tract': ['C64', 'C65', 'C66', 'C67', 'C68'], # aka urology
+    'Central Nervous System': ['C69', 'C70', 'C71', 'C72'], # aka neuro-oncology, includes eye, brain
+    'Endocrine': ['C73', 'C74', 'C75', 'C77'], # aka endocrine oncology, includes thyroid
 }
