@@ -22,12 +22,21 @@ DEFAULT_HYPERPARAMS = {
     "XGB": {}, # eXtreme Gradient Boosting
     "REALMLP": {}, # Real Multilayer Perceptron
     "TABM": {}, # Tabular DL model that makes Multiple predictions
-    # "MITRA": {'fine_tune': True}, # Mitra - takes too long
-    "TABICL": {}, # Tabular In-Context Learning
-    "TABPFNV2": {}, # Tabular Prior-Fitted Networks v2
-    "LR": {}, # Logistic Regression
+    "LR": {
+        "solver": "saga",
+        "max_iter": 1000,
+        "penalty": "l2",
+        "tol": 1e-4,
+    }, # Logistic Regression
     "ENS_WEIGHTED": {}, # Greedy Weighted Ensemble
     "SIMPLE_ENS_WEIGHTED": {}, # Simple Weighted Ensemble
+}
+# The models below are pre-trained transformer models that uses in-context learning
+# It is only appropriate for small to medium datasets (<20k samples)
+ICL_HYPERPARAMS = {
+    "TABICL": {}, # Tabular In-Context Learning
+    "TABPFNV2": {}, # Tabular Prior-Fitted Networks v2
+    "MITRA": {'fine_tune': True}, # Mitra
 }
 
 ###############################################################################
@@ -86,6 +95,8 @@ def train_model(
         extra_init_kwargs = {}
     if extra_fit_kwargs is None:
         extra_fit_kwargs = {'hyperparameters': DEFAULT_HYPERPARAMS}
+        if len(data) < 30000:
+            extra_fit_kwargs['hyperparameters'].update(ICL_HYPERPARAMS)
 
     quality = presets.replace("_quality", "")
     save_path = f"{save_path}/{target}"
@@ -137,7 +148,7 @@ def train_model(
         init_kwargs["groups"] = "cv_folds"
 
     if resume:
-        predictor = TabularPredictor.load(save_path, resume=True).fit(data, **fit_kwargs)
+        predictor = TabularPredictor.load(save_path).fit_extra(**extra_fit_kwargs)
     else:
         predictor = TabularPredictor(label=target, **init_kwargs).fit(data, **fit_kwargs)
     return predictor
