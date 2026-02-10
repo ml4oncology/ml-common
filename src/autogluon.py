@@ -204,7 +204,7 @@ def get_val_preds(models: dict[str, TabularPredictor]):
 def get_val_pred(model: TabularPredictor, model_name: str | None = None):
     """Get the predictions in the validation set"""
     if model._trainer.bagged_mode:  # used cross-validation
-        return model.predict_proba_oof(model=model_name)[True]  # oof = out of fold
+        return model.predict_proba_oof(model=model_name)[1]  # oof = out of fold
     else:
         x, y = model.load_data_internal(data="val")
-        return model.predict_proba(x, model=model_name)[True]
+        return model.predict_proba(x, model=model_name)[1]
