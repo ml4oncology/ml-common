@@ -35,7 +35,7 @@ DEFAULT_HYPERPARAMS = {
 # It is only appropriate for small to medium datasets (<20k samples)
 ICL_HYPERPARAMS = {
     "TABICL": {}, # Tabular In-Context Learning
-    "TABPFNV2": {}, # Tabular Prior-Fitted Networks v2
+    "REALTABPFN-V2": {}, # Tabular Prior-Fitted Networks v2
     "MITRA": {'fine_tune': True}, # Mitra
 }
 
